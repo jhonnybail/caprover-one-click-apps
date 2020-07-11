@@ -1,0 +1,71 @@
+{
+  "captainVersion": "2",
+  "displayName": "PHP + Mysql",
+  "dockerCompose": {
+      "version": "3.5",
+      "services": {
+          "$$cap_appname-db": {
+              "image": "mysql:$$cap_mysql_version",
+              "command": "--innodb-use-native-aio=0",
+              "tty": "true",
+              "notExposeAsWebApp": "true",
+              "volumes": ["$$cap_appname-db-data:/var/lib/mysql"],
+              "restart": "always",
+              "environment": {
+                  "MYSQL_ROOT_PASSWORD": "$$cap_db_pass",
+                  "MYSQL_DATABASE": "wordpress",
+                  "MYSQL_USER": "$$cap_db_user",
+                  "MYSQL_PASSWORD": "$$cap_db_pass"
+              }
+          },
+          "$$cap_appname-wordpress": {
+              "depends_on": ["$$cap_appname-db"],
+              "dockerfileLines": [
+                   "FROM php:$$cap_php_version-fpm",
+                   "RUN apt-get update && apt-get install openssl -y",
+                   "RUN apt-get update && apt-get install -y libpng-dev libjpeg-dev libcurl3-dev mariadb-client vim git wget",
+                   "RUN docker-php-ext-configure gd --with-png-dir=/usr/lib/ --with-jpeg-dir=/usr/lib/ --with-gd",
+                   "RUN docker-php-ext-install pdo pdo_mysql mysqli mbstring bcmath fileinfo gd",
+                   "EXPOSE 80",
+                   "CMD [\"php-fpm\"]"
+              ],
+              "volumes": ["$$cap_appname-wp-data:/var/www/html"],
+              "restart": "always"
+          }
+      },
+      "volumes": {
+          "db_data": {}
+      }
+  },
+  "instructions": {
+      "start": "",
+      "end": ""
+  },
+  "variables": [
+      {
+          "id": "$$cap_db_user",
+          "label": "Database user",
+          "defaultValue": "wordpressuser",
+          "validRegex": "/^([a-zA-Z0-9])+$/"
+      },
+      {
+          "id": "$$cap_db_pass",
+          "label": "Database password",
+          "description": "",
+          "validRegex": "/.{1,}/"
+      },
+      {
+          "id": "$$cap_mysql_version",
+          "label": "MySQL Version",
+          "defaultValue": "5.7",
+          "description": "Check out their Docker page for the valid tags https://hub.docker.com/r/library/mysql/tags/",
+          "validRegex": "/^([^\\s^\\/])+$/"
+      },
+      {
+          "id": "$$cap_php_version",
+          "label": "PHP Version",
+          "defaultValue": "7.3",
+          "validRegex": "/^([^\\s^\\/])+$/"
+      }
+  ]
+}
